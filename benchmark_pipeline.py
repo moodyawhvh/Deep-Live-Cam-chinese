@@ -1,11 +1,11 @@
-"""Standalone pipeline benchmark — no UI required.
+"""独立流水线基准测试 —— 无需 UI。
 
-Captures 200 frames from the webcam and runs the full face swap pipeline,
-printing per-stage timing and effective FPS.
+从摄像头采集 200 帧,运行完整换脸流水线,
+输出各阶段耗时与有效 FPS。
 """
 import os, sys, time, cv2, numpy as np, queue, threading
 
-# PATH fix for cuDNN (Windows only)
+# cuDNN 的 PATH 修复(仅 Windows)
 if sys.platform == "win32":
     _sp = os.path.join(sys.prefix, "Lib", "site-packages")
     _torch_lib = os.path.join(_sp, "torch", "lib")
@@ -19,7 +19,7 @@ from modules import platform_info
 
 platform_info.print_banner()
 
-# Pick providers based on what's actually available on this machine.
+# 根据本机实际可用的执行后端选择 provider。
 if platform_info.HAS_CUDA_PROVIDER:
     _providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
 elif platform_info.HAS_COREML_PROVIDER:
@@ -27,7 +27,7 @@ elif platform_info.HAS_COREML_PROVIDER:
 else:
     _providers = ["CPUExecutionProvider"]
 
-# --- Init models (same as the app) ---
+# --- 初始化模型(与应用本体一致)---
 print(f"Loading models with providers={_providers}...")
 fa = FaceAnalysis(
     name="buffalo_l",
@@ -42,9 +42,9 @@ swap_model = insightface.model_zoo.get_model(
 face_size = swap_model.input_size[0]
 aimg_dummy = np.empty((face_size, face_size, 3), dtype=np.uint8)
 
-# --- Camera setup ---
-# Windows: DirectShow explicit for MJPEG 1080p60 support.
-# macOS/Linux: default backend (AVFoundation / V4L2).
+# --- 摄像头设置 ---
+# Windows:显式使用 DirectShow,以支持 MJPEG 1080p60。
+# macOS/Linux:默认后端(AVFoundation / V4L2)。
 print("Opening camera at 1080p60 MJPEG...")
 if sys.platform == "win32":
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
@@ -56,7 +56,7 @@ cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 cap.set(cv2.CAP_PROP_FPS, 60)
 time.sleep(0.5)
 
-# Warmup + get source face
+# 预热并获取源人脸
 for _ in range(15):
     cap.read()
 ret, src_frame = cap.read()
@@ -68,7 +68,7 @@ if not faces:
 source_face = faces[0]
 print(f"Source face acquired. Frame: {src_frame.shape}")
 
-# --- Capture thread (same as app) ---
+# --- 采集线程(与应用本体一致)---
 capture_queue = queue.Queue(maxsize=2)
 stop_event = threading.Event()
 
@@ -80,6 +80,7 @@ def capture_thread():
         try:
             capture_queue.put_nowait(frame)
         except queue.Full:
+            # 队列已满时丢掉最旧一帧,保证始终处理最新画面。
             try:
                 capture_queue.get_nowait()
             except queue.Empty:
@@ -92,7 +93,7 @@ def capture_thread():
 cap_t = threading.Thread(target=capture_thread, daemon=True)
 cap_t.start()
 
-# --- Warmup processing ---
+# --- 预热处理 ---
 print("Warming up pipeline...")
 for _ in range(20):
     try:
@@ -102,14 +103,16 @@ for _ in range(20):
     f = frame.copy()
     det_faces = fa.get(f)
     if det_faces:
+        # 取画面中最靠左(通常是主角)的人脸。
         tgt = min(det_faces, key=lambda x: x.bbox[0])
         bgr_fake, M = swap_model.get(f, tgt, source_face, paste_back=False)
         _fast_paste_back(f, bgr_fake, aimg_dummy, M)
 
-# --- Benchmark ---
+# --- 基准测试 ---
 N = 200
 print(f"\nBenchmarking {N} frames...")
 
+# 各阶段耗时记录(单位:毫秒)。
 t_queue, t_det, t_onnx, t_paste, t_copy, t_cvt, t_total = [], [], [], [], [], [], []
 det_count = 0
 cached_face = None
@@ -124,7 +127,7 @@ for i in range(N):
         continue
     t_queue.append((time.perf_counter() - t0) * 1000)
 
-    # Detection every 3rd frame — det-only (no landmark/recognition)
+    # 每 3 帧执行一次检测 —— 仅检测(不含关键点/识别)
     det_count += 1
     if det_count % 3 == 0:
         t0 = time.perf_counter()
@@ -136,7 +139,7 @@ for i in range(N):
         t_det.append((time.perf_counter() - t0) * 1000)
 
     if cached_face is not None:
-        # No frame.copy() — _fast_paste_back writes in-place, we own the frame
+        # 不做 frame.copy() —— _fast_paste_back 原地写入,帧归本线程所有
         t0 = time.perf_counter()
         bgr_fake, M = swap_model.get(frame, cached_face, source_face, paste_back=False)
         t_onnx.append((time.perf_counter() - t0) * 1000)
@@ -145,10 +148,10 @@ for i in range(N):
         result = _fast_paste_back(frame, bgr_fake, aimg_dummy, M)
         t_paste.append((time.perf_counter() - t0) * 1000)
 
-        # Display prep — resize then flip (no cvtColor needed)
+        # 显示准备 —— 先缩放再翻转(无需 cvtColor)
         t0 = time.perf_counter()
         small = cv2.resize(result, (640, 360))
-        _ = small[:, :, ::-1]  # BGR→RGB zero-copy
+        _ = small[:, :, ::-1]  # BGR→RGB 零拷贝
         t_cvt.append((time.perf_counter() - t0) * 1000)
 
     t_total.append((time.perf_counter() - tt) * 1000)
@@ -156,7 +159,7 @@ for i in range(N):
 stop_event.set()
 cap.release()
 
-# --- Results ---
+# --- 结果输出 ---
 def s(name, arr):
     if not arr:
         return

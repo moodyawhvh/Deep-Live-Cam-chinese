@@ -1,0 +1,6 @@
+> 🌐 本文档由 [hacksider/Deep-Live-Cam](https://github.com/hacksider/Deep-Live-Cam) 翻译,英文原版见原项目。
+
+只需把模型文件放进本文件夹即可,下载地址:
+
+https://huggingface.co/hacksider/deep-live-cam/resolve/main/inswapper_128_fp16.onnx?download=true
+https://huggingface.co/hacksider/deep-live-cam/resolve/main/gfpgan-1024.onnx?download=true

@@ -3,13 +3,13 @@
 import os
 import sys
 
-# Add the project root to PATH so bundled ffmpeg/ffprobe are found
+# 将项目根目录加入 PATH,确保捆绑的 ffmpeg/ffprobe 能被找到
 project_root = os.path.dirname(os.path.abspath(__file__))
 os.environ["PATH"] = project_root + os.pathsep + os.environ.get("PATH", "")
 
-# On Windows, register NVIDIA CUDA DLL directories so onnxruntime-gpu can
-# find cuDNN/cublas. Python 3.8+ ignores PATH for extension-module native deps —
-# os.add_dll_directory() is required. Also keep PATH for child processes/ffmpeg.
+# 在 Windows 上注册 NVIDIA CUDA DLL 目录,让 onnxruntime-gpu 能找到
+# cuDNN/cublas。Python 3.8+ 对扩展模块的原生依赖会忽略 PATH,必须使用
+# os.add_dll_directory()。同时保留 PATH 设置,供子进程/ffmpeg 使用。
 if sys.platform == "win32":
     _site_packages = os.path.join(sys.prefix, "Lib", "site-packages")
     _venv_site_packages = os.path.join(project_root, "venv", "Lib", "site-packages")
@@ -31,35 +31,34 @@ if sys.platform == "win32":
             except (OSError, AttributeError):
                 pass
 
-    # On Windows, register OpenVINO DLL directories so onnxruntime's
-    # OpenVINOExecutionProvider can find openvino.dll.  This must happen
-    # before any ONNX InferenceSession is created.  Failure is non-fatal:
-    # OpenVINO simply isn't installed, and onnxruntime will fall back to CPU.
+    # 在 Windows 上注册 OpenVINO DLL 目录,让 onnxruntime 的
+    # OpenVINOExecutionProvider 能找到 openvino.dll。这一步必须在
+    # 创建任何 ONNX InferenceSession 之前完成。失败不影响启动:
+    # 只是未安装 OpenVINO,onnxruntime 会回退到 CPU 执行。
     try:
         from onnxruntime.tools.add_openvino_win_libs import (  # type: ignore[import-untyped]  # noqa: E501
             add_openvino_libs_to_path,
         )
         add_openvino_libs_to_path()
     except ImportError:
-        # onnxruntime build without the OpenVINO tooling module — no-op.
+        # 当前 onnxruntime 构建不包含 OpenVINO 工具模块 —— 直接跳过。
         pass
     except FileNotFoundError:
-        # OpenVINO site-packages dir absent — no-op.
+        # site-packages 中不存在 OpenVINO 目录 —— 直接跳过。
         pass
     except SystemExit as exc:
-        # add_openvino_libs_to_path() calls sys.exit() when OpenVINO libs
-        # can't be located (e.g. OPENVINO_LIB_PATHS unset).  Log the message
-        # it raised with so the failure is visible, but keep startup alive.
+        # 当 OpenVINO 库无法定位时(例如 OPENVINO_LIB_PATHS 未设置),
+        # add_openvino_libs_to_path() 会调用 sys.exit()。这里打印其
+        # 附带的消息使失败可见,但不中断启动流程。
         print(
             f"[startup] OpenVINO DLL registration skipped: {exc}",
             flush=True,
         )
 
-# On Linux, pre-load NVIDIA shared libraries (cuDNN, cuBLAS, nvrtc...) shipped
-# inside the venv via pip wheels (nvidia-cudnn-cu12, etc.). LD_LIBRARY_PATH
-# cannot be set after Python starts, so we use ctypes.CDLL with RTLD_GLOBAL
-# instead. This makes symbols available to onnxruntime when it dlopens its
-# CUDA provider.
+# 在 Linux 上预加载 venv 内随 pip 轮子(nvidia-cudnn-cu12 等)分发的
+# NVIDIA 共享库(cuDNN、cuBLAS、nvrtc...)。Python 启动后无法再设置
+# LD_LIBRARY_PATH,因此改用 ctypes.CDLL 配合 RTLD_GLOBAL 加载,使
+# onnxruntime dlopen 其 CUDA provider 时能解析到这些符号。
 if sys.platform.startswith("linux"):
     import ctypes
     import glob
@@ -76,8 +75,7 @@ if sys.platform.startswith("linux"):
             _lib_dir = os.path.join(_nvidia_dir, _pkg, "lib")
             if not os.path.isdir(_lib_dir):
                 continue
-            # Also expose the directory to child processes, without
-            # duplicating an entry that is already present.
+            # 同时把该目录暴露给子进程,已存在的条目不重复添加。
             _ldp = os.environ.get("LD_LIBRARY_PATH", "")
             if _lib_dir not in _ldp.split(os.pathsep):
                 os.environ["LD_LIBRARY_PATH"] = (
