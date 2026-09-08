@@ -1,26 +1,27 @@
-***[Remove this]The issue would be closed without notice and be considered spam if the template is not followed.***
+> 🌐 本文档由 [hacksider/Deep-Live-Cam](https://github.com/hacksider/Deep-Live-Cam) 翻译,英文原版见原项目。
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+***【请删除本行】如果不按照此模板提交,Issue 将被直接关闭并视为垃圾信息。***
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+**描述 Bug**
+清晰、简洁地描述这个 Bug 的具体表现。
 
-**Error Message**
+**截图**
+如果适用,请添加截图以帮助说明问题。
 
-`<The error message in terminal>`
+**错误信息**
 
-**Desktop (please complete the following information):**
- - OS: [e.g. Windows]
- - Version [e.g. 22]
+`<终端中的错误信息>`
+
+**桌面环境(请填写以下信息):**
+ - 操作系统:[例如 Windows]
+ - 版本 [例如 22]
  - GPU
  - CPU
 
-**Additional context**
-Add any other context about the problem here.
+**其他补充**
+在此填写与该问题相关的其他背景信息。
 
-**Confirmation (Mandatory)**
-- [ ] I have followed the template
-- [ ] This is not a query about how to increase performance
-- [ ] I have checked the issues page, and this is not a duplicate
-
+**确认事项(必选)**
+- [ ] 我已按照模板填写
+- [ ] 这不是询问如何提升性能的问题
+- [ ] 我已检查 Issues 页面,确认这不是重复问题

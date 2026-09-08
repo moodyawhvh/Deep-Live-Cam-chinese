@@ -1,38 +1,40 @@
-# Collaboration Guidelines and Codebase Quality Standards
+> 🌐 本文档由 [hacksider/Deep-Live-Cam](https://github.com/hacksider/Deep-Live-Cam) 翻译,英文原版见原项目。
 
-To ensure smooth collaboration and maintain the high quality of our codebase, please adhere to the following guidelines:
+# 协作规范与代码库质量标准
 
-## Branching Strategy
+为了保证协作顺畅并维持代码库的高质量,请遵守以下规范:
+
+## 分支策略
 
 *   **`premain`**:
-    *   Always push your changes to the `premain` branch initially.
-    *   This safeguards the `main` branch from unintentional disruptions.
-    *   All tests will be performed on the `premain` branch.
-    *   Changes will only be merged into `main` after several hours or days of rigorous testing.
+    *   所有改动一律先推送到 `premain` 分支。
+    *   以此保护 `main` 分支免受意外破坏。
+    *   所有测试都会在 `premain` 分支上进行。
+    *   只有经过数小时乃至数天的严格测试之后,改动才会合并进 `main`。
 *   **`experimental`**:
-    *   For large or potentially disruptive changes, use the `experimental` branch.
-    *   This allows for thorough discussion and review before considering a merge into `main`.
+    *   较大的改动或可能造成破坏的改动,请使用 `experimental` 分支。
+    *   在考虑合并进 `main` 之前,先在这里进行充分的讨论和审查。
 
-## Pre-Pull Request Checklist
+## 提交 Pull Request 前的检查清单
 
-Before creating a Pull Request (PR), ensure you have completed the following tests:
+创建 Pull Request(PR)之前,请确保已完成以下测试:
 
-### Functionality
+### 功能性
 
-*   **Realtime Faceswap**:
-    *   Test with face enhancer **enabled** and **disabled**.
-*   **Map Faces**:
-    *   Test with both options (**enabled** and **disabled**).
-*   **Camera Listing**:
-    *   Verify that all cameras are listed accurately.
+*   **实时换脸(Realtime Faceswap)**:
+    *   分别在面部增强器 **开启** 与 **关闭** 两种状态下进行测试。
+*   **人脸映射(Map Faces)**:
+    *   两种选项(**开启** 与 **关闭**)都要测试。
+*   **摄像头列表(Camera Listing)**:
+    *   确认所有摄像头都能被准确列出。
 
-### Stability
+### 稳定性
 
-*   **Realtime FPS**:
-    *   Confirm that there is no drop in real-time frames per second (FPS).
-*   **Boot Time**:
-    *   Changes should not negatively impact the boot time of either the application or the real-time faceswap feature.
-*   **GPU Overloading**:
-    *   Test for a minimum of 15 minutes to guarantee no GPU overloading, which could lead to crashes.
-*   **App Performance**:
-    *   The application should remain responsive and not exhibit any lag.
+*   **实时帧率(Realtime FPS)**:
+    *   确认实时帧率(FPS)没有任何下降。
+*   **启动时间(Boot Time)**:
+    *   改动不应拖慢应用本身或实时换脸功能的启动速度。
+*   **GPU 过载(GPU Overloading)**:
+    *   至少持续测试 15 分钟,确保不会出现可能导致崩溃的 GPU 过载。
+*   **应用性能(App Performance)**:
+    *   应用应保持响应流畅,不得出现任何卡顿。
